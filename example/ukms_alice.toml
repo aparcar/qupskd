@@ -17,4 +17,4 @@ alias = "bob"
 source_KME_ID = "hsn_alice"
 
 master_SAE_ID = "sae_alice"
-slave_SAE_ID = "sae_bob"
+remote_SAE_ID = "sae_bob"

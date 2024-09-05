@@ -17,7 +17,7 @@ alias = "alice"
 source_KME_ID = "hsn_bob"
 
 master_SAE_ID = "sae_bob"
-slave_SAE_ID = "sae_alice"
+remote_SAE_ID = "sae_alice"
 
 [peers.hsn_carol]
 etsi_url = "http://localhost:5556"
@@ -28,4 +28,4 @@ alias = "carol"
 source_KME_ID = "hsn_bob"
 
 master_SAE_ID = "sae_bob"
-slave_SAE_ID = "sae_carol"
+remote_SAE_ID = "sae_carol"

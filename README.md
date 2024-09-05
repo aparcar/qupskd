@@ -125,8 +125,8 @@ Upon successful key exchange, a downstream application like [Wireguard] could
 leverage these keys. Imagine configuring a `cronjob` to automatically update a
 Wireguard connection with the exchanged keys as PSK.
 
-> [!WARNING] 
-> *uKMS* does not manage sessions, and there may be brief intervals where the
+> [!WARNING]
+> _uKMS_ does not manage sessions, and there may be brief intervals where the
 > keys differ. [Wireguard] incorporates its own session management and
 > handshake mechanisms. Your downstream application should also address these
 > aspects.
@@ -135,6 +135,15 @@ Wireguard connection with the exchanged keys as PSK.
 # on a device connected to bob
 * * * * * wg set wg1 peer XYZ...ABC= preshared-key ./pks/bob/alice.key
 ```
+
+## Using `wg-set-psk`
+
+Instead of storing secret keys in files, you can use the `wg-set-psk` command
+to directly inject the key into a Wireguard interface. This command needs to
+be manually compiled and installed from the [GitHub repository](https://github.com/aparcar/wg-set-psk).
+
+Whichever Wireguard peer has the `wireguard_public_key` attribute will
+automatically be updated on every key rotation.
 
 ## Why uKMS
 
@@ -155,10 +164,10 @@ application, but currently, it showcases the feasibility of a working system.
 
 ## Alternatives
 
-Currently, *uKMS* is intended for demonstration purposes only. If you're seeking
+Currently, _uKMS_ is intended for demonstration purposes only. If you're seeking
 genuine security measures against quantum computing threats, consider exploring
 [Rosenpass] instead. It offers protection for [Wireguard] connections or
-generates a key file in a manner similar to *uKMS*.
+generates a key file in a manner similar to _uKMS_.
 
 [ETSI 014]: https://www.etsi.org/deliver/etsi_gs/QKD/001_099/014/01.01.01_60/gs_qkd014v010101p.pdf
 [TOML]: https://toml.io/
