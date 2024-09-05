@@ -10,6 +10,7 @@ from hashlib import sha3_256
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from os import getenv
 from pathlib import Path
+from subprocess import run
 
 import tomllib
 
@@ -19,10 +20,9 @@ config_file = getenv("UKMS_CONFIG_FILE", "/etc/ukms.toml")
 
 config = tomllib.loads(Path(config_file).read_text())
 
-
-key_folder = Path(config["key_folder"])
-key_folder.mkdir(parents=True, exist_ok=True)
-
+if "key_folder" in config:
+    key_folder = Path(config["key_folder"])
+    key_folder.mkdir(parents=True, exist_ok=True)
 
 def fetch_json(url):
     print(f"Fetching data from {url}")
@@ -36,7 +36,7 @@ def fetch_json(url):
 
 
 def fetch_qkd_key(peer):
-    url = f"{peer['etsi_url']}/api/v1/keys/{peer['slave_SAE_ID']}/enc_keys"
+    url = f"{peer['etsi_url']}/api/v1/keys/{peer['remote_SAE_ID']}/enc_keys?number=1"
     data = fetch_json(url)
     peer["key_ID"] = data["keys"][0]["key_ID"]
     peer["key"] = data["keys"][0]["key"]
@@ -81,14 +81,18 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
         if self.path.endswith("/new"):
             peer["rotate_in_seconds"] = 0
-            peer["remote_key"] = None
 
         fetch_qkd_key(peer)
 
         self.send_response(200)
         self.send_header("Content-type", "application/json")
         self.end_headers()
-        response = json.dumps({"key_ID": peer["key_ID"]})
+        response = json.dumps(
+            {
+                "status": "ok",
+                "key_ID": peer["key_ID"],
+            }
+        )
         self.wfile.write(response.encode())
         peer["key_update"] = True
 
@@ -133,10 +137,19 @@ async def update_psk(peer):
             for key in sorted([peer["remote_key"], peer["key"]]):
                 psk += key
 
-            psk = sha3_256(psk.encode()).digest()
-            (key_folder / f"wg2-{peer['alias']}.key").write_bytes(
-                base64.b64encode(psk)
-            )
+            psk = base64.b64encode(sha3_256(psk.encode()).digest())
+            if "wireguard_public_key" in peer:
+                run(
+                    args=[
+                        "wg-set-psk",
+                        f"wg0_{peer['alias']}",
+                        peer["wireguard_public_key"],
+                    ],
+                    input=psk,
+                )
+            else:
+                (key_folder / f"{peer['alias']}.key").write_bytes(psk)
+
 
             print(f"new PSK: {peer['source_KME_ID']} <-> {peer['target_KME_ID']}")
             peer["key_update"] = False
@@ -158,7 +171,7 @@ async def fetch_peer_data(peer):
             data = fetch_json(url)
             key_ID = data.get("key_ID")
 
-            url = f"{peer['etsi_url']}/api/v1/keys/{peer['slave_SAE_ID']}/dec_keys?key_ID={key_ID}"
+            url = f"{peer['etsi_url']}/api/v1/keys/{peer['remote_SAE_ID']}/dec_keys?key_ID={key_ID}"
             data = fetch_json(url)
 
             peer["remote_key"] = data.get("keys")[0].get("key")
