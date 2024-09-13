@@ -1,4 +1,4 @@
-# uKMS - Micro Key Management System
+# quPSKd - QKD to PSK
 
 > [!CAUTION]
 > This document describes a proof-of-concept for demonstration purposes only.
@@ -13,7 +13,7 @@ on which key ID to utilize.
 > (citation needed) for eavesdropping on the quantum exchange. An attacker may
 > only disrupt the exchange of key material, as photons can be "read" only once.
 
-Upon every key change, _uKMS_ combines both keys, concatenates them, and applies
+Upon every key change, _qupskd_ combines both keys, concatenates them, and applies
 SHA3 hashing. The resultant hash is saved on both devices and serves as a
 pre-shared key (PSK). Downstream applications can then utilize this key for
 encryption and authentification purposes.
@@ -63,7 +63,7 @@ already have keys from both entities.
 ## Configuration
 
 Configuration is managed through a [TOML] file, located either at
-`/etc/ukms.toml` or a path specified by the `UKMS_CONFIG_FILE` environment
+`/etc/qupskd.toml` or a path specified by the `QUPSKD_CONFIG_FILE` environment
 variable. The options within are explained inline.
 
 > [!TIP]
@@ -76,10 +76,10 @@ variable. The options within are explained inline.
 key_rotation_seconds = 120 # Interval for key rotation
 key_folder = "./psk/" # Directory for storing generated keys
 
-ukms_bind = "localhost" # Interface/IP for UKMS binding
-ukms_port = 5555 # Port for UKMS service
+qupskd_bind = "localhost" # Interface/IP for qupskd binding
+qupskd_port = 5555 # Port for qupskd service
 
-# For those without access to an expensive QKD setup, uKMS can simulate a QKD
+# For those without access to an expensive QKD setup, qupskd can simulate a QKD
 # device. This mode generates keys based on the key_ID hash, making them
 # available on both ends but completely insecure.
 enable_fake_qkd_api = true
@@ -89,7 +89,7 @@ enable_fake_qkd_api = true
 [peers.hsn_bob] # Identifier must match target_KME_ID
 etsi_url = "http://localhost:5555" # QKD device for key requests
 
-ukms_url = "http://localhost:5556" # Peer uKMS address
+qupskd_url = "http://localhost:5556" # Peer qupskd address
 
 alias = "bob" # Name for storing the key
 
@@ -101,17 +101,17 @@ slave_SAE_ID = "sae_bob" # Identifier for the "SAE" intended for communication
 
 ## Demonstration
 
-Execute `ukms.py` using the three configuration files located in `./example`.
+Execute `qupskd.py` using the three configuration files located in `./example`.
 
 ```shell
 # shell 1
-UKMS_CONFIG_FILE=example/ukms_alice.toml ./ukms.py
+QUPSKD_CONFIG_FILE=example/qupskd_alice.toml ./qupskd.py
 
 # shell 2
-UKMS_CONFIG_FILE=example/ukms_bob.toml ./ukms.py
+QUPSKD_CONFIG_FILE=example/qupskd_bob.toml ./qupskd.py
 
 # shell 3
-UKMS_CONFIG_FILE=example/ukms_carol.toml ./ukms.py
+QUPSKD_CONFIG_FILE=example/qupskd_carol.toml ./qupskd.py
 ```
 
 Shortly, you should observe the creation of the following files, which contain
@@ -126,8 +126,8 @@ leverage these keys. Imagine configuring a `cronjob` to automatically update a
 Wireguard connection with the exchanged keys as PSK.
 
 > [!WARNING]
-> _uKMS_ does not manage sessions, and there may be brief intervals where the
-> keys differ. [Wireguard] incorporates its own session management and
+> quPSKd does not manage sessions, and there may be brief intervals where the
+> keys differ. [WireGuard] incorporates its own session management and
 > handshake mechanisms. Your downstream application should also address these
 > aspects.
 
@@ -145,7 +145,7 @@ be manually compiled and installed from the [GitHub repository](https://github.c
 Whichever Wireguard peer has the `wireguard_public_key` attribute will
 automatically be updated on every key rotation.
 
-## Why uKMS
+## Why quPSKd?
 
 Quantum computers pose a significant threat to conventional key exchange
 mechanisms and public-key cryptography (citation needed). QKD aims to counter
@@ -164,10 +164,10 @@ application, but currently, it showcases the feasibility of a working system.
 
 ## Alternatives
 
-Currently, _uKMS_ is intended for demonstration purposes only. If you're seeking
+Currently, _quPSKd_ is intended for demonstration purposes only. If you're seeking
 genuine security measures against quantum computing threats, consider exploring
 [Rosenpass] instead. It offers protection for [Wireguard] connections or
-generates a key file in a manner similar to _uKMS_.
+generates a key file in a manner similar to _quPSKd_.
 
 [ETSI 014]: https://www.etsi.org/deliver/etsi_gs/QKD/001_099/014/01.01.01_60/gs_qkd014v010101p.pdf
 [TOML]: https://toml.io/

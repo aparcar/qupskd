@@ -1,8 +1,8 @@
 key_rotation_seconds = 120
 key_folder = "./psk/carol"
 
-ukms_bind = "localhost"
-ukms_port = 5557
+qupskd_bind = "localhost"
+qupskd_port = 5557
 
 enable_fake_qkd_api = true
 
@@ -10,9 +10,11 @@ enable_fake_qkd_api = true
 
 [peers.hsn_bob]
 etsi_url = "http://localhost:5557"
-ukms_url = "http://localhost:5556"
+qupskd_url = "http://localhost:5556"
 
 alias = "bob"
+
+psk = "donttellalice"
 
 source_KME_ID = "hsn_carol"
 

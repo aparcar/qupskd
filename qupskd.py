@@ -16,13 +16,16 @@ import tomllib
 
 peer_data = {}
 
-config_file = getenv("UKMS_CONFIG_FILE", "/etc/ukms.toml")
+config_file = getenv("QUPSKD_CONFIG_FILE", "/etc/qupskd.toml")
 
 config = tomllib.loads(Path(config_file).read_text())
+
+IDENTITY_STRING = "quPSKd Version 1"
 
 if "key_folder" in config:
     key_folder = Path(config["key_folder"])
     key_folder.mkdir(parents=True, exist_ok=True)
+
 
 def fetch_json(url):
     print(f"Fetching data from {url}")
@@ -111,15 +114,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 def run_server():
     httpd = ThreadingHTTPServer(
-        (config["ukms_bind"], config["ukms_port"]), SimpleHTTPRequestHandler
+        (config["qupskd_bind"], config["qupskd_port"]), SimpleHTTPRequestHandler
     )
-    print(f"Serving at http://{config['ukms_bind']}:{config['ukms_port']}")
+    print(f"Serving at http://{config['qupskd_bind']}:{config['qupskd_port']}")
     httpd.serve_forever()
 
 
 async def request_key_rotation(peer):
     while True:
-        url = f"{peer['ukms_url']}/api/v1/peer/{peer['source_KME_ID']}/rotate"
+        url = f"{peer['qupskd_url']}/api/v1/peer/{peer['source_KME_ID']}/rotate"
         data = fetch_json(url)
         print(data)
         if data.get("status") == "ok":
@@ -130,11 +133,23 @@ async def request_key_rotation(peer):
         await asyncio.sleep(2)
 
 
-async def update_psk(peer):
+async def update_psk(peer: dict):
     while True:
         if peer["key_update"] and peer["key"] and peer["remote_key"]:
             psk = ""
-            for key in sorted([peer["remote_key"], peer["key"]]):
+
+            secrets =  [
+                peer["remote_key"],
+                peer["key"],
+                peer["key_ID"],
+                peer["remote_key_ID"],
+                peer.get("psk", ""),
+                IDENTITY_STRING,
+            ]
+
+            print(secrets)
+
+            for key in sorted(secrets):
                 psk += key
 
             psk = base64.b64encode(sha3_256(psk.encode()).digest())
@@ -150,8 +165,7 @@ async def update_psk(peer):
             else:
                 (key_folder / f"{peer['alias']}.key").write_bytes(psk)
 
-
-            print(f"new PSK: {peer['source_KME_ID']} <-> {peer['target_KME_ID']}")
+            print(f"new PSK: {peer['source_KME_ID']} <-> {peer['target_KME_ID']} {psk}")
             peer["key_update"] = False
         await asyncio.sleep(1)
 
@@ -165,13 +179,15 @@ async def fetch_peer_data(peer):
 
         try:
             if peer["rotate_in_seconds"] == -1:
-                url = f"{peer['ukms_url']}/api/v1/peer/{peer['source_KME_ID']}/new"
+                url = f"{peer['qupskd_url']}/api/v1/peer/{peer['source_KME_ID']}/new"
+                peer["key"] = ""
+                peer["remote_key"] = ""
             else:
-                url = f"{peer['ukms_url']}/api/v1/peer/{peer['source_KME_ID']}/rotate"
+                url = f"{peer['qupskd_url']}/api/v1/peer/{peer['source_KME_ID']}/rotate"
             data = fetch_json(url)
-            key_ID = data.get("key_ID")
+            peer["remote_key_ID"] = data.get("key_ID")
 
-            url = f"{peer['etsi_url']}/api/v1/keys/{peer['remote_SAE_ID']}/dec_keys?key_ID={key_ID}"
+            url = f"{peer['etsi_url']}/api/v1/keys/{peer['remote_SAE_ID']}/dec_keys?key_ID={peer['remote_key_ID']}"
             data = fetch_json(url)
 
             peer["remote_key"] = data.get("keys")[0].get("key")

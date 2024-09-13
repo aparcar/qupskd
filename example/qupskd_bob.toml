@@ -1,8 +1,8 @@
 key_rotation_seconds = 120
 key_folder = "./psk/bob"
 
-ukms_bind = "localhost"
-ukms_port = 5556
+qupskd_bind = "localhost"
+qupskd_port = 5556
 
 enable_fake_qkd_api = true
 
@@ -10,9 +10,11 @@ enable_fake_qkd_api = true
 
 [peers.hsn_alice]
 etsi_url = "http://localhost:5556"
-ukms_url = "http://localhost:5555"
+qupskd_url = "http://localhost:5555"
 
 alias = "alice"
+
+psk = "thisisverysecret"
 
 source_KME_ID = "hsn_bob"
 
@@ -21,9 +23,12 @@ remote_SAE_ID = "sae_alice"
 
 [peers.hsn_carol]
 etsi_url = "http://localhost:5556"
-ukms_url = "http://localhost:5557"
+qupskd_url = "http://localhost:5557"
 
 alias = "carol"
+
+psk = "donttellalice"
+
 
 source_KME_ID = "hsn_bob"
 
