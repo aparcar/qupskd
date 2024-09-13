@@ -121,9 +121,9 @@ setup would operate across various devices, synchronizing over a local network.
 - `./pks/alice/bob.key` <-> `./pks/bob/alice.key`
 - `./pks/bob/carol.key` <-> `./pks/carol/bob.key`
 
-Upon successful key exchange, a downstream application like [Wireguard] could
+Upon successful key exchange, a downstream application like [WireGuard] could
 leverage these keys. Imagine configuring a `cronjob` to automatically update a
-Wireguard connection with the exchanged keys as PSK.
+WireGuard connection with the exchanged keys as PSK.
 
 > [!WARNING]
 > quPSKd does not manage sessions, and there may be brief intervals where the
@@ -139,10 +139,10 @@ Wireguard connection with the exchanged keys as PSK.
 ## Using `wg-set-psk`
 
 Instead of storing secret keys in files, you can use the `wg-set-psk` command
-to directly inject the key into a Wireguard interface. This command needs to
+to directly inject the key into a WireGuard interface. This command needs to
 be manually compiled and installed from the [GitHub repository](https://github.com/aparcar/wg-set-psk).
 
-Whichever Wireguard peer has the `wireguard_public_key` attribute will
+Whichever WireGuard peer has the `wireguard_public_key` attribute will
 automatically be updated on every key rotation.
 
 ## Why quPSKd?
@@ -166,10 +166,10 @@ application, but currently, it showcases the feasibility of a working system.
 
 Currently, _quPSKd_ is intended for demonstration purposes only. If you're seeking
 genuine security measures against quantum computing threats, consider exploring
-[Rosenpass] instead. It offers protection for [Wireguard] connections or
+[Rosenpass] instead. It offers protection for [WireGuard] connections or
 generates a key file in a manner similar to _quPSKd_.
 
 [ETSI 014]: https://www.etsi.org/deliver/etsi_gs/QKD/001_099/014/01.01.01_60/gs_qkd014v010101p.pdf
 [TOML]: https://toml.io/
-[Wireguard]: https://www.wireguard.com
+[WireGuard]: https://www.wireguard.com
 [Rosenpass]: https://rosenpass.eu
