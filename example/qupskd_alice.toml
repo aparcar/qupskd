@@ -1,22 +1,26 @@
-key_rotation_seconds = 120
-key_folder = "./psk/alice"
 
-qupskd_bind = "localhost"
-qupskd_port = 5555
+qupskd_bind = "localhost" # Interface/IP for qupskd binding
+qupskd_port = 5555        # Port for qupskd service
 
+# For those without access to an expensive QKD setup, qupskd can simulate a QKD
+# device. This mode generates keys based on the key_ID hash, making them
+# available on both ends but completely insecure.
 enable_fake_qkd_api = true
 
-[peers]
+etsi_url = "http://localhost:5555"          # QKD device for key requests
+remote_qupskd_url = "http://localhost:5556" # Peer qupskd address
 
-[peers.hsn_bob]
-etsi_url = "http://localhost:5555"
-qupskd_url = "http://localhost:5556"
+# If you want to store the PSK in a file
+key_folder = "./psk/alice" # (optional) Directory for storing generated keys
+alias = "bob"              # Name for storing the key
+psk = "thisisverysecret"   # (optional) Extra PSK to add to the mix
 
-alias = "bob"
+# If you want to inject the PSK directly into WireGuard
+# wg-set-psk is required, see https://github.com/aparcar/wg-set-psk
+#
+# wireguard_public_key = "GOJt/mfPuwoUiKD+hARpxuDtnzJOWkcK0Tq+sxxw4UQ="
 
-psk = "thisisverysecret"
-
-source_KME_ID = "hsn_alice"
-
-master_SAE_ID = "sae_alice"
-remote_SAE_ID = "sae_bob"
+source_KME_ID = "hsn_alice" # Identifier for the "Key Management Entity" in operation
+target_KME_ID = "hsn_bob"   # Identifier for the "Key Management Entity" intended for communication
+master_SAE_ID = "sae_alice" # Identifier for the "Secure Application Entity" in operation
+remote_SAE_ID = "sae_bob"   # Identifier for the "SAE" intended for communication

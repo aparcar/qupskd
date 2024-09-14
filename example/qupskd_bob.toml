@@ -1,36 +1,12 @@
-key_rotation_seconds = 120
 key_folder = "./psk/bob"
-
 qupskd_bind = "localhost"
 qupskd_port = 5556
-
 enable_fake_qkd_api = true
-
-[peers]
-
-[peers.hsn_alice]
 etsi_url = "http://localhost:5556"
-qupskd_url = "http://localhost:5555"
-
-alias = "alice"
-
+remote_qupskd_url = "http://localhost:5555"
+alias = "bob"
 psk = "thisisverysecret"
-
 source_KME_ID = "hsn_bob"
-
+target_KME_ID = "hsn_alice"
 master_SAE_ID = "sae_bob"
 remote_SAE_ID = "sae_alice"
-
-[peers.hsn_carol]
-etsi_url = "http://localhost:5556"
-qupskd_url = "http://localhost:5557"
-
-alias = "carol"
-
-psk = "donttellalice"
-
-
-source_KME_ID = "hsn_bob"
-
-master_SAE_ID = "sae_bob"
-remote_SAE_ID = "sae_carol"
