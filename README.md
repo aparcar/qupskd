@@ -48,56 +48,31 @@ sequenceDiagram
     end
 ```
 
-1. Alice contacts Bob's API endpoint `/new` to obtain a `key_ID` and prompts Bob
-   to also request a new key.
+1. Alice contacts Bob's API endpoint `/new` to obtain a `key_ID`.
 2. Bob seeks a new key from his QKD device using the `/enc_keys` endpoint.
 3. Bob's QKD device provides a fresh key and must then remove it from its storage.
-4. Bob shares the `key_ID` with Alice.
+4. Bob shares the `key_ID` with Alice as a response of the `/new` request.
 5. Alice requests the specific key associated with the `key_ID` from her QKD device.
 6. Alice's QKD device delivers the requested key and removes it from its storage.
+7. Alices contacts Bob's API endpoint `/ack` to signal the key was found.
+   **A new PSK is generated**.
 
-The steps outlined are repeated at intervals defined by `key_rotation_seconds`,
-except the `/rotate` endpoint is used now, as both key management systems
-already have keys from both entities.
+The steps outlined are repeated every two minutes, except the `/rotate`
+endpoint is used now, as both key management systems already have keys
+from both entities.
 
 ## Configuration
 
 Configuration is managed through a [TOML] file, located either at
 `/etc/qupskd.toml` or a path specified by the `QUPSKD_CONFIG_FILE` environment
-variable. The options within are explained inline.
+variable. The options within are explained inline of the example configuration
+at [qupskd_alice.toml](./example/qupskd_alice.toml).
 
 > [!TIP]
 > Some configurations (`source_KME_ID`, `master_SAE_ID`, etc.) may seem
 > unfamiliar and are specifically relevant when integrating real QKD devices.
 > For a simulated QKD device, it is essential to use identical identifiers on
 > both ends, as demonstrated in `./example`.
-
-```toml
-key_rotation_seconds = 120 # Interval for key rotation
-key_folder = "./psk/" # Directory for storing generated keys
-
-qupskd_bind = "localhost" # Interface/IP for qupskd binding
-qupskd_port = 5555 # Port for qupskd service
-
-# For those without access to an expensive QKD setup, qupskd can simulate a QKD
-# device. This mode generates keys based on the key_ID hash, making them
-# available on both ends but completely insecure.
-enable_fake_qkd_api = true
-
-[peers]
-
-[peers.hsn_bob] # Identifier must match target_KME_ID
-etsi_url = "http://localhost:5555" # QKD device for key requests
-
-qupskd_url = "http://localhost:5556" # Peer qupskd address
-
-alias = "bob" # Name for storing the key
-
-# Refer to the ETSI documentation for detailed usage.
-source_KME_ID = "hsn_alice" # Identifier for the "Key Management Entity" in operation
-master_SAE_ID = "sae_alice" # Identifier for the "Secure Application Entity" in operation
-slave_SAE_ID = "sae_bob" # Identifier for the "SAE" intended for communication
-```
 
 ## Demonstration
 
@@ -109,9 +84,6 @@ QUPSKD_CONFIG_FILE=example/qupskd_alice.toml ./qupskd.py
 
 # shell 2
 QUPSKD_CONFIG_FILE=example/qupskd_bob.toml ./qupskd.py
-
-# shell 3
-QUPSKD_CONFIG_FILE=example/qupskd_carol.toml ./qupskd.py
 ```
 
 Shortly, you should observe the creation of the following files, which contain
@@ -119,7 +91,6 @@ identical keys in different locations. In a more complex demonstration, this
 setup would operate across various devices, synchronizing over a local network.
 
 - `./pks/alice/bob.key` <-> `./pks/bob/alice.key`
-- `./pks/bob/carol.key` <-> `./pks/carol/bob.key`
 
 Upon successful key exchange, a downstream application like [WireGuard] could
 leverage these keys. Imagine configuring a `cronjob` to automatically update a
@@ -145,6 +116,22 @@ be manually compiled and installed from the [GitHub repository](https://github.c
 Whichever WireGuard peer has the `wireguard_public_key` attribute will
 automatically be updated on every key rotation.
 
+## PSK generation
+
+The resulting PSK is not the plain QKD key but instead a combination of the
+previous PSK, the new QKD key, and the key ID. This process is repeated for
+every key exchange. The following pseudo-code illustrates the process:
+
+```
+k <- KDF("quPSKd Version 1", PSK)
+while True:
+    key_id <- qkd_key_id()
+    qkd_key <- qkd_get_key(key_id)
+    (k, osk) <- KDF(k || qkd_key || key_id)
+    transmit_qkd_metadata(qkd_key)
+    wireguard.set_psk(osk)
+```
+
 ## Why quPSKd?
 
 Quantum computers pose a significant threat to conventional key exchange
@@ -166,8 +153,8 @@ application, but currently, it showcases the feasibility of a working system.
 
 Currently, _quPSKd_ is intended for demonstration purposes only. If you're seeking
 genuine security measures against quantum computing threats, consider exploring
-[Rosenpass] instead. It offers protection for [WireGuard] connections or
-generates a key file in a manner similar to _quPSKd_.
+[Rosenpass] which uses post-quantum cryptography instead. It offers protection for
+[WireGuard] connections or generates a key file in a manner similar to _quPSKd_.
 
 [ETSI 014]: https://www.etsi.org/deliver/etsi_gs/QKD/001_099/014/01.01.01_60/gs_qkd014v010101p.pdf
 [TOML]: https://toml.io/
