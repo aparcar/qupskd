@@ -28,7 +28,7 @@ sequenceDiagram
     autonumber
     participant QKD Device Alice
     Note over Alice: Request key_ID
-    Alice->>Bob: /api/v1/peer/hsn_alice/new
+    Alice->>Bob: /new
     Note over Bob: Request new key
     Bob->>QKD Device Bob: /api/v1/keys/sae_alice/enc_keys
     QKD Device Bob -->> Bob: { "key_ID": "ABC...", "key": "123..."}
@@ -37,14 +37,17 @@ sequenceDiagram
     Note over Alice: Request key with key_ID
     Alice->>QKD Device Alice: /api/v1/keys/sae_bob/dec_keys?key_ID=ABC...
     QKD Device Alice -->> Alice: { "key_ID": "ABC...", "key": "123..."}
-    Note over Alice: Write key
+    Alice ->> Bob: /ack
+    Note over Alice,Bob: Write key
     loop Every 120 seconds
-        Alice->>Bob: /api/v1/peer/hsn_alice/rotate
+        Alice->>Bob: /rotate
         Bob->>QKD Device Bob: /api/v1/keys/sae_alice/enc_keys
         QKD Device Bob -->> Bob: { "key_ID": "ABC...", "key": "123..."}
         Bob-->>Alice: { "key_ID": "ABC..."}
         Alice->>QKD Device Alice: /api/v1/keys/sae_bob/dec_keys?key_ID=ABC...
         QKD Device Alice -->> Alice: { "key_ID": "ABC...", "key": "123..."}
+        Alice ->> Bob: /ack
+        Note over Alice,Bob: Write key
     end
 ```
 

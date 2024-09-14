@@ -129,13 +129,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         )
         self.wfile.write(response.encode())
 
-    def check_peer(self) -> dict:
-        if not self.path.split("/")[-2] == config["target_KME_ID"]:
-            self.handle_404()
-
     def handle_rotate(self, new=False):
-        self.check_peer()
-
         if new:
             state["psk"] = sha3_base64([config.get("psk", ""), IDENTITY_STRING])
             print("Initiating key rotation")
@@ -155,8 +149,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         state["initiator"] = False
 
     def handle_ack(self):
-        self.check_peer()
-
         psk_update()
 
         self.send_response(200)
@@ -175,16 +167,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(b"404 Not Found")
 
     def do_GET(self):
-        if self.path.startswith("/api/v1/peer/"):
-            if self.path.endswith("/new"):
-                self.handle_rotate(new=True)
-            elif self.path.endswith("/rotate"):
-                self.handle_rotate()
-            elif self.path.endswith("/ack"):
-                self.handle_ack()
-            else:
-                self.handle_404()
-
+        print(self.path)
+        if self.path == "/new":
+            self.handle_rotate(new=True)
+        elif self.path == "/rotate":
+            self.handle_rotate()
+        elif self.path == "/ack":
+            self.handle_ack()
         elif self.path.startswith("/api/v1/keys/") and config["enable_fake_qkd_api"]:
             self.handle_keys()
         else:
@@ -221,18 +210,16 @@ async def fetch_peer_data():
                     state["initiator"] = True
 
             if not state["key_ID"]:
-                url = f"{config['remote_qupskd_url']}/api/v1/peer/{config['source_KME_ID']}/new"
+                url = f"{config['remote_qupskd_url']}/new"
             else:
-                url = f"{config['remote_qupskd_url']}/api/v1/peer/{config['source_KME_ID']}/rotate"
+                url = f"{config['remote_qupskd_url']}/rotate"
 
             data = fetch_json(url)
             state["key_ID"] = data.get("key_ID")
 
             fetch_qkd_key_id()
 
-            fetch_json(
-                f"{config['remote_qupskd_url']}/api/v1/peer/{config['source_KME_ID']}/ack"
-            )
+            fetch_json(f"{config['remote_qupskd_url']}/ack")
 
             psk_update()
         except Exception as e:
