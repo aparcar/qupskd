@@ -17,6 +17,7 @@ import tomllib
 IDENTITY_STRING = "quPSKd Version 1"
 INITIATOR_WAIT_SECONDS = 120
 RESPONDER_WAIT_SECONDS = 130
+MAX_WAIT_SECONDS = 180
 
 config_file = getenv("QUPSKD_CONFIG_FILE", "/etc/qupskd.toml")
 
@@ -90,9 +91,9 @@ def psk_update():
     else:
         (key_folder / f"{config['alias']}.key").write_bytes(state["psk"])
 
-    print(
-        f"new PSK: {config['source_KME_ID']} <-> {config['target_KME_ID']}"
-    )
+    print(f"new PSK: {config['source_KME_ID']} <-> {config['target_KME_ID']}")
+
+    state["last_rotate"] = 0
 
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -157,7 +158,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.check_peer()
 
         psk_update()
-        state["last_rotate"] = 0
 
         self.send_response(200)
         self.send_header("Content-type", "application/json")
@@ -202,6 +202,11 @@ def run_server():
 async def fetch_peer_data():
     while True:
         try:
+            if state["last_rotate"] > MAX_WAIT_SECONDS:
+                print("Key rotation failed. Setting random PSK")
+                state["psk"] = sha3_base64([uuid.uuid4().hex])
+                psk_update()
+
             if state["initiator"]:
                 if -1 < state["last_rotate"] < INITIATOR_WAIT_SECONDS:
                     state["last_rotate"] += 1
@@ -224,8 +229,6 @@ async def fetch_peer_data():
             state["key_ID"] = data.get("key_ID")
 
             fetch_qkd_key_id()
-
-            state["last_rotate"] = 0
 
             fetch_json(
                 f"{config['remote_qupskd_url']}/api/v1/peer/{config['source_KME_ID']}/ack"
