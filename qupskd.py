@@ -232,6 +232,9 @@ async def main():
     server_thread = threading.Thread(target=run_server, daemon=True)
     server_thread.start()
 
+    # Give the server thread time to start
+    await asyncio.sleep(1)
+
     await fetch_peer_data()
 
 
