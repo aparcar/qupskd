@@ -36,7 +36,7 @@ def sha3_base64(input):
 state = {
     "key": None,
     "key_ID": None,
-    "last_rotate": -1,
+    "last_rotate": -2,
     "initiator": False,
     "psk": sha3_base64([config.get("psk", ""), IDENTITY_STRING]),
 }
@@ -78,7 +78,7 @@ def psk_update():
         state["psk"].decode(),
     ]
 
-    state["psk"] = base64.b64encode(sha3_256("".join(sorted(parts)).encode()).digest())
+    state["psk"] = sha3_base64(parts)
     if "wireguard_public_key" in config:
         run(
             args=[
@@ -190,20 +190,20 @@ def run_server():
 
 async def fetch_peer_data():
     while True:
+        state["last_rotate"] += 1
         try:
             if state["last_rotate"] > MAX_WAIT_SECONDS:
                 print("Key rotation failed. Setting random PSK")
                 state["psk"] = sha3_base64([uuid.uuid4().hex])
                 psk_update()
+                continue
 
             if state["initiator"]:
                 if -1 < state["last_rotate"] < INITIATOR_WAIT_SECONDS:
-                    state["last_rotate"] += 1
                     await asyncio.sleep(1)
                     continue
             else:
                 if -1 < state["last_rotate"] < RESPONDER_WAIT_SECONDS:
-                    state["last_rotate"] += 1
                     await asyncio.sleep(1)
                     continue
                 else:
