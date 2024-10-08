@@ -3,6 +3,7 @@
 import asyncio
 import base64
 import json
+import logging
 import threading
 import urllib.request
 import uuid
@@ -13,6 +14,13 @@ from pathlib import Path
 from subprocess import run
 
 import tomllib
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    format="%(asctime)s %(levelname)s %(message)s",
+    level=logging.DEBUG,
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 IDENTITY_STRING = "quPSKd Version 1"
 INITIATOR_WAIT_SECONDS = 120
@@ -43,13 +51,13 @@ state = {
 
 
 def fetch_json(url):
-    print(f"Fetching data from {url}")
+    logger.info(f"Fetching data from {url}")
 
     with urllib.request.urlopen(url) as response:
         if response.status == 200:
             return json.loads(response.read().decode())
         else:
-            print(f"Failed to fetch data, status code: {response.status}")
+            logger.error(f"Failed to fetch data, status code: {response.status}")
             return None
 
 
@@ -91,7 +99,7 @@ def psk_update():
     else:
         (key_folder / f"{config['alias']}.key").write_bytes(state["psk"])
 
-    print(f"new PSK: {config['source_KME_ID']} <-> {config['target_KME_ID']}")
+    logger.info(f"new PSK: {config['source_KME_ID']} <-> {config['target_KME_ID']}")
 
     state["last_rotate"] = 0
 
@@ -100,6 +108,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.server_version = "quPSKd/1.0"
+
+    def log_message(self, format: str, *args) -> None:
+        logger.debug(format % args)
+
+    def log_error(self, format: str, *args) -> None:
+        logger.warning(format % args)
 
     def handle_keys(self):
         if "dec_keys" in self.path and "key_ID=" not in self.path:
@@ -132,7 +146,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def handle_rotate(self, new=False):
         if new:
             state["psk"] = sha3_base64([config.get("psk", ""), IDENTITY_STRING])
-            print("Initiating key rotation")
+            logger.info("Initiating key rotation")
 
         fetch_qkd_key()
 
@@ -167,7 +181,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(b"404 Not Found")
 
     def do_GET(self):
-        print(self.path)
+        logger.debug(self.path)
         if self.path == "/new":
             self.handle_rotate(new=True)
         elif self.path == "/rotate":
@@ -184,7 +198,7 @@ def run_server():
     httpd = ThreadingHTTPServer(
         (config["qupskd_bind"], config["qupskd_port"]), SimpleHTTPRequestHandler
     )
-    print(f"Serving at http://{config['qupskd_bind']}:{config['qupskd_port']}")
+    logger.info(f"Serving at http://{config['qupskd_bind']}:{config['qupskd_port']}")
     httpd.serve_forever()
 
 
@@ -193,7 +207,7 @@ async def fetch_peer_data():
         state["last_rotate"] += 1
         try:
             if state["last_rotate"] > MAX_WAIT_SECONDS:
-                print("Key rotation failed. Setting random PSK")
+                logger.warning("Key rotation failed. Setting random PSK")
                 state["psk"] = sha3_base64([uuid.uuid4().hex])
                 psk_update()
                 continue
@@ -223,7 +237,7 @@ async def fetch_peer_data():
 
             psk_update()
         except Exception as e:
-            print(e)
+            logger.error(e)
             await asyncio.sleep(1)
 
 
