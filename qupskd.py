@@ -115,34 +115,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def log_error(self, format: str, *args) -> None:
         logger.warning(format % args)
 
-    def handle_keys(self):
-        if "dec_keys" in self.path and "key_ID=" not in self.path:
-            self.send_response(400)
-            self.end_headers()
-            self.wfile.write(b"key_ID parameter is required")
-            return
-
-        if "dec_keys" in self.path:
-            key_ID = self.path.split("=")[-1]
-        else:
-            key_ID = str(uuid.uuid4())
-        key = base64.b64encode(sha3_256(key_ID.encode()).digest()).decode()
-
-        self.send_response(200)
-        self.send_header("Content-type", "application/json")
-        self.end_headers()
-        response = json.dumps(
-            {
-                "keys": [
-                    {
-                        "key": key,
-                        "key_ID": key_ID,
-                    }
-                ]
-            }
-        )
-        self.wfile.write(response.encode())
-
     def handle_rotate(self, new=False):
         if new:
             state["psk"] = sha3_base64([config.get("psk", ""), IDENTITY_STRING])
@@ -181,15 +153,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(b"404 Not Found")
 
     def do_GET(self):
-        logger.debug(self.path)
         if self.path == "/new":
             self.handle_rotate(new=True)
         elif self.path == "/rotate":
             self.handle_rotate()
         elif self.path == "/ack":
             self.handle_ack()
-        elif self.path.startswith("/api/v1/keys/") and config["enable_fake_qkd_api"]:
-            self.handle_keys()
         else:
             self.handle_404()
 
@@ -245,9 +214,6 @@ async def main():
     # Run the server in a separate thread because it's not async
     server_thread = threading.Thread(target=run_server, daemon=True)
     server_thread.start()
-
-    # Give the server thread time to start
-    await asyncio.sleep(1)
 
     await fetch_peer_data()
 

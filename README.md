@@ -79,6 +79,14 @@ at [qupskd_alice.toml](./example/qupskd_alice.toml).
 
 ## Demonstration
 
+If you don't have a real QKD setup, you can simulate one using the provided
+`qkd_simulator.py`. This script will behave as a QKD device, providing keys via
+an ETSI 014 REST API. Start it with the following command:
+
+```shell
+./qkd_simulator.py localhost 12345
+```
+
 Execute `qupskd.py` using the three configuration files located in `./example`.
 
 ```shell

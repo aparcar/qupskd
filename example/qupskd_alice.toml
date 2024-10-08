@@ -2,12 +2,7 @@
 qupskd_bind = "localhost" # Interface/IP for qupskd binding
 qupskd_port = 5555        # Port for qupskd service
 
-# For those without access to an expensive QKD setup, qupskd can simulate a QKD
-# device. This mode generates keys based on the key_ID hash, making them
-# available on both ends but completely insecure.
-enable_fake_qkd_api = true
-
-etsi_url = "http://localhost:5555"          # QKD device for key requests
+etsi_url = "http://localhost:12345"         # QKD device for key requests
 remote_qupskd_url = "http://localhost:5556" # Peer qupskd address
 
 # If you want to store the PSK in a file

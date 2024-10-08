@@ -1,8 +1,7 @@
 key_folder = "./psk/bob"
 qupskd_bind = "localhost"
 qupskd_port = 5556
-enable_fake_qkd_api = true
-etsi_url = "http://localhost:5556"
+etsi_url = "http://localhost:12345"         # QKD device for key requests
 remote_qupskd_url = "http://localhost:5555"
 alias = "bob"
 psk = "thisisverysecret"
