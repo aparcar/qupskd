@@ -6,8 +6,6 @@ from hashlib import sha3_256
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from sys import argv
 
-import tomllib
-
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s",

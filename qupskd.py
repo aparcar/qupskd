@@ -4,6 +4,7 @@ import asyncio
 import base64
 import json
 import logging
+import socket
 import threading
 import urllib.request
 import uuid
@@ -211,6 +212,18 @@ async def fetch_peer_data():
 
 
 async def main():
+    while True:
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind((config["qupskd_bind"], config["qupskd_port"]))
+                s.close()
+                break
+        except OSError:
+            logger.warning(
+                f"Waiting for {config['qupskd_bind']}:{config['qupskd_port']} to become available"
+            )
+            await asyncio.sleep(1)
+
     # Run the server in a separate thread because it's not async
     server_thread = threading.Thread(target=run_server, daemon=True)
     server_thread.start()
