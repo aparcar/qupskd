@@ -72,7 +72,7 @@ variable. The options within are explained inline of the example configuration
 at [qupskd_alice.toml](./example/qupskd_alice.toml).
 
 > [!TIP]
-> Some configurations (`source_KME_ID`, `master_SAE_ID`, etc.) may seem
+> Some configurations (`remote_KME_ID`, etc.) may seem
 > unfamiliar and are specifically relevant when integrating real QKD devices.
 > For a simulated QKD device, it is essential to use identical identifiers on
 > both ends, as demonstrated in `./example`.

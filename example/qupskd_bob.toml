@@ -5,7 +5,4 @@ etsi_url = "http://localhost:12345"         # QKD device for key requests
 remote_qupskd_url = "http://localhost:5555"
 alias = "bob"
 psk = "thisisverysecret"
-source_KME_ID = "hsn_bob"
-target_KME_ID = "hsn_alice"
-master_SAE_ID = "sae_bob"
 remote_SAE_ID = "sae_alice"
