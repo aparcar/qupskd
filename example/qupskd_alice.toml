@@ -15,7 +15,4 @@ psk = "thisisverysecret"   # (optional) Extra PSK to add to the mix
 #
 # wireguard_public_key = "GOJt/mfPuwoUiKD+hARpxuDtnzJOWkcK0Tq+sxxw4UQ="
 
-source_KME_ID = "hsn_alice" # Identifier for the "Key Management Entity" in operation
-target_KME_ID = "hsn_bob"   # Identifier for the "Key Management Entity" intended for communication
-master_SAE_ID = "sae_alice" # Identifier for the "Secure Application Entity" in operation
-remote_SAE_ID = "sae_bob"   # Identifier for the "SAE" intended for communication
+remote_SAE_ID = "sae_bob" # Identifier for the "SAE" intended for communication

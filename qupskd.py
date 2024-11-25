@@ -32,7 +32,6 @@ config_file = getenv("QUPSKD_CONFIG_FILE", "/etc/qupskd.toml")
 
 config = tomllib.loads(Path(config_file).read_text())
 
-
 if "key_folder" in config:
     key_folder = Path(config["key_folder"])
     key_folder.mkdir(parents=True, exist_ok=True)
@@ -112,7 +111,7 @@ def psk_update():
     else:
         (key_folder / f"{config['alias']}.key").write_bytes(state["psk"])
 
-    logger.info(f"new PSK: {config['source_KME_ID']} <-> {config['target_KME_ID']}")
+    logger.info(f"new PSK with {config['alias']}")
 
     state["last_rotate"] = 0
 
