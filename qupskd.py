@@ -50,11 +50,23 @@ state = {
     "psk": sha3_base64([config.get("psk", ""), IDENTITY_STRING]),
 }
 
+ssl_context = None
+if "cacert" in config:
+    import ssl
 
-def fetch_json(url):
+    ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+    ssl_context.load_verify_locations(cafile=config["cacert"])
+    ssl_context.load_cert_chain(
+        certfile=config["cert"],
+        keyfile=config["key"],
+    )
+    ssl_context.verify_mode = ssl.CERT_REQUIRED
+
+
+def fetch_json(url: str, ssl_context=None):
     logger.info(f"Fetching data from {url}")
 
-    with urllib.request.urlopen(url) as response:
+    with urllib.request.urlopen(url, context=ssl_context) as response:
         if response.status == 200:
             return json.loads(response.read().decode())
         else:
@@ -62,8 +74,8 @@ def fetch_json(url):
             return None
 
 
-def fetch_qkd(url):
-    data = fetch_json(url)
+def fetch_qkd(url: str):
+    data = fetch_json(url, ssl_context=ssl_context)
     state["key_ID"] = data["keys"][0]["key_ID"]
     state["key"] = data["keys"][0]["key"]
 
